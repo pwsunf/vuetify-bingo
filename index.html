@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <style type="text/css">
+        #app {
+            /* https://uigradients.com/#Margo */
+            background: #FFEFBA;  /* fallback for old browsers */
+            background: -webkit-linear-gradient(to bottom, #FFFFFF, #FFEFBA);  /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to bottom, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+        }
+
+        #header, #bingo { margin-bottom: 20px }
+
+        #bingo { display: table; border-collapse: collapse; border: 1px solid; }
+
+        .square { text-align: center; font-size: 2.0em; cursor: pointer; background-color: white; }
+        .selected { color: white; background-color: #1976D2; }
+
+        .row, .col { margin: 0; padding: 0; }
+        .row { display: table-row; }
+        .col { display: table-cell; vertical-align: middle; border: 1px solid; }
+
+        h1 { color: #1976D2; font-family: "Great Vibes", cursive; text-shadow: 0 1px 1px #fff; }
+        h1.win { font-weight: bold; }
+        h1.win span { color: red; }
+
+        a { text-decoration: none; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <v-app>
+        <v-main>
+            <v-container :style="containerStyle">
+                <div id="header">
+                    <h1 v-if="!success">Bingo</h1>
+                    <h1 v-else class="win">Bingo - <span>Winner</span> &#128526;&#129351;</h1>
+                </div>
+
+                <div id="bingo" v-resize="onResize">
+                    <v-row
+                        v-for="r in 5"
+                        :key="'row' + r"
+                    >
+                        <v-col
+                            v-for="c in 5"
+                            :key="'col' + (((r - 1) * 5) + c)"
+                            :ref="'sq' + (((r - 1) * 5) + c)"
+                            :style="squareStyle"
+                            class="square"
+                            @click="toggle((((r - 1) * 5) + c))"
+                        >
+                            <template v-if="(((r - 1) * 5) + c) !== 13">
+                                {{ items[(((r - 1) * 5) + c) - 1] }}
+                            </template>
+                            <template v-else>
+                                &#128526;
+                            </template>
+                        </v-col>
+                    </v-row>
+                </div>
+
+                <div id="footer">
+                    <a href='https://github.com/pwsunf/vuetify-bingo/' target='_blank'>
+                        <h3>&copy; pwsunf</h3>
+                    </a>
+                </div>
+            </v-container>
+        </v-main>
+    </v-app>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        data: () => ({
+            squareSize: '',
+            success: false,
+            items: [],
+            checkArray: [
+                // row
+                ['1', '2', '3', '4', '5'],
+                ['6', '7', '8', '9', '10'],
+                // ['11', '12', '13', '14', '15'],
+                ['16', '17', '18', '19', '20'],
+                ['21', '22', '23', '24', '25'],
+                // col
+                ['1', '6', '11', '16', '21'],
+                ['2', '7', '12', '17', '22'],
+                // ['3', '8', '13', '18', '23'],
+                ['4', '9', '14', '19', '24'],
+                ['5', '10', '15', '20', '25'],
+                // x
+                // ['1', '7', '13', '19', '25'],
+                // ['5', '9', '13', '17', '21']
+            ]
+        }),
+        computed: {
+            containerStyle () {
+              return {
+                  maxWidth: (this.squareSize * 5 + 24) + 'px'
+              }
+            },
+            squareStyle () {
+                return {
+                    width: this.squareSize + 'px',
+                    height: this.squareSize + 'px'
+                }
+            }
+        },
+        mounted () {
+            this.initialize()
+        },
+        methods: {
+            initialize () {
+                this.initializeSound()
+                this.initializeItems()
+            },
+            initializeSound () {
+                const soundClick = new Audio('sound/click.mp3')
+                Object.assign(this, { soundClick })
+
+                const soundWin = new Audio('sound/win.mp3')
+                Object.assign(this, { soundWin })
+            },
+            initializeItems () {
+                this.items = []
+                for (let i=1; i<=50; i++) {
+                    this.items.push(i)
+                }
+                this.shuffle(this.items)
+            },
+            onResize () {
+                let bingoWidth = window.innerWidth - 24 // 24 padding
+                let bingoHeight = window.innerHeight - 140
+                let targetSize = bingoWidth < bingoHeight ? bingoWidth : bingoHeight
+                let squareSize = Math.floor(targetSize / 5)
+
+                this.squareSize = squareSize
+            },
+            toggle (id) {
+                if (id === 13) {
+                    return
+                }
+
+                // toggle selected
+                this.$refs['sq' + id][0].classList.toggle('selected')
+                this.soundClick.play();
+
+                // checkArray
+                let success = false
+                for (let i=0; i<this.checkArray.length; i++) {
+                    let targetArray = this.checkArray[i]
+                    let cnt = 0
+
+                    targetArray.forEach(e => {
+                        if (this.$refs['sq' + e][0].classList.contains('selected')) {
+                            cnt++
+                        }
+                    })
+
+                    if (cnt === 5) {
+                        success = true
+                        break
+                    }
+                }
+
+                this.success = success
+
+                if (success) {
+                    this.soundWin.play();
+                }
+            },
+            shuffle (a) {
+                let j, x, i
+                for (i = a.length - 1; i > 0; i--) {
+                    j = Math.floor(Math.random() * (i + 1))
+                    x = a[i]
+                    a[i] = a[j]
+                    a[j] = x
+                }
+                return a;
+            }
+        }
+    })
+</script>
+</body>
+</html>
