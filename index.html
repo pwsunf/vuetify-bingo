@@ -120,7 +120,7 @@
         },
         methods: {
             initialize () {
-                this.initializeSound()
+                // this.initializeSound()
                 this.initializeItems()
             },
             initializeSound () {
@@ -152,7 +152,7 @@
 
                 // toggle selected
                 this.$refs['sq' + id][0].classList.toggle('selected')
-                this.soundClick.play();
+                // this.soundClick.play();
 
                 // checkArray
                 let success = false
@@ -175,7 +175,7 @@
                 this.success = success
 
                 if (success) {
-                    this.soundWin.play();
+                    // this.soundWin.play();
                 }
             },
             shuffle (a) {
