@@ -15,18 +15,19 @@
 
         #header, #bingo { margin-bottom: 20px }
 
-        #bingo { display: table; border-collapse: collapse; border: 1px solid; }
+        #bingo { display: table; border-collapse: collapse; border: 1px solid black !important; }
+
+        #footer { display: flex; justify-content: space-between; font-weight: bold; color: #1976D2; }
 
         .square { text-align: center; font-size: 2.0em; cursor: pointer; background-color: white; }
         .selected { color: white; background-color: #1976D2; }
 
         .row, .col { margin: 0; padding: 0; }
         .row { display: table-row; }
-        .col { display: table-cell; vertical-align: middle; border: 1px solid; }
+        .col { display: table-cell; vertical-align: middle; border: 1px solid black !important; }
 
         h1 { color: #1976D2; font-family: "Great Vibes", cursive; text-shadow: 0 1px 1px #fff; }
-        h1.win { font-weight: bold; }
-        h1.win span { color: red; }
+        h1 span { color: red; }
 
         a { text-decoration: none; }
     </style>
@@ -37,8 +38,12 @@
         <v-main>
             <v-container :style="containerStyle">
                 <div id="header">
-                    <h1 v-if="!success">Bingo</h1>
-                    <h1 v-else class="win">Bingo - <span>Winner</span> &#128526;&#129351;</h1>
+                    <h1>
+                        Bingo {{ this.itemSize.value }}
+                        <template v-if="success">
+                            - <span>Winner</span> &#128526;&#129351;
+                        </template>
+                    </h1>
                 </div>
 
                 <div id="bingo" v-resize="onResize">
@@ -66,8 +71,10 @@
 
                 <div id="footer">
                     <a href='https://github.com/pwsunf/vuetify-bingo/' target='_blank'>
-                        <h3>&copy; pwsunf</h3>
+                        <span><v-icon small>mdi-github</v-icon> pwsunf</span>
                     </a>
+
+                    <span class="date">{{ moment().format('MM/DD HH:mm:ss') }}</span>
                 </div>
             </v-container>
         </v-main>
@@ -76,6 +83,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script>
 <script>
     new Vue({
         el: '#app',
@@ -83,6 +91,12 @@
         data: () => ({
             squareSize: '',
             success: false,
+            itemSize: {
+                value: 50,
+                min: 25,
+                max: 100,
+                default: 50
+            },
             items: [],
             checkArray: [
                 // row
@@ -131,8 +145,22 @@
                 Object.assign(this, { soundWin })
             },
             initializeItems () {
+                let uri = window.location.search.substring(1)
+                let params = new URLSearchParams(uri)
+
+                let size = params.get('size')
+                if (size) {
+                    if (Number.isNaN(size) || size < this.itemSize.min || this.itemSize.max < size) {
+                        size = this.itemSize.default
+                    }
+                } else {
+                    size = this.itemSize.default
+                }
+
+                this.itemSize.value = size
+
                 this.items = []
-                for (let i=1; i<=50; i++) {
+                for (let i=1; i<=this.itemSize.value; i++) {
                     this.items.push(i)
                 }
                 this.shuffle(this.items)
