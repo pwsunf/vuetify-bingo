@@ -13,71 +13,111 @@
             background: linear-gradient(to bottom, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
         }
 
-        #header, #bingo { margin-bottom: 20px }
+        a { text-decoration: none; }
+
+        .v-toolbar__title { color: #1976D2; font-family: "Great Vibes", cursive; text-shadow: 0 1px 1px #fff; font-weight: bold; font-size: 1.5em; }
+        .v-toolbar__title .v-icon { color: #1976D2 !important; }
+        .v-toolbar__title span { color: black; }
+        .v-toolbar__title span.win { color: red; }
 
         #bingo { display: table; border-collapse: collapse; border: 1px solid black !important; }
+        #bingo .square { text-align: center; font-size: 2.0em; cursor: pointer; background-color: white; }
+        #bingo .selected { color: white; background-color: #1976D2; }
+        #bingo .col { margin: 0; padding: 0; }
+        #bingo .row { display: table-row; }
+        #bingo .col { display: table-cell; vertical-align: middle; border: 1px solid black !important; }
 
-        #footer { display: flex; justify-content: space-between; font-weight: bold; color: #1976D2; }
-
-        .square { text-align: center; font-size: 2.0em; cursor: pointer; background-color: white; }
-        .selected { color: white; background-color: #1976D2; }
-
-        .row, .col { margin: 0; padding: 0; }
-        .row { display: table-row; }
-        .col { display: table-cell; vertical-align: middle; border: 1px solid black !important; }
-
-        h1 { color: #1976D2; font-family: "Great Vibes", cursive; text-shadow: 0 1px 1px #fff; }
-        h1 span { color: red; }
-
-        a { text-decoration: none; }
+        .v-footer * { font-weight: bold; color: #1976D2; }
     </style>
 </head>
 <body>
 <div id="app">
-    <v-app>
+    <v-app v-resize="onResize">
+        <v-app-bar app color="white">
+            <v-toolbar-title>
+                <v-icon large @click="clearMode">
+                    mdi-home-circle
+                </v-icon>
+
+                {{ bingoModeStr }}
+
+                <template v-if="success">
+                    <span> - </span>
+                    <span class="win">Winner</span> &#128526;&#129351;
+                </template>
+            </v-toolbar-title>
+        </v-app-bar>
+
         <v-main>
             <v-container :style="containerStyle">
-                <div id="header">
-                    <h1>
-                        Bingo {{ this.itemSize.value }}
-                        <template v-if="success">
-                            - <span>Winner</span> &#128526;&#129351;
-                        </template>
-                    </h1>
-                </div>
+                <!-- mode select -->
+                <div class="pt-5" v-if="!bingoMode">
+                    <v-text-field
+                        v-model="itemSize.value"
+                        label="size"
+                        placeholder="default : 50"
+                        type="number"
+                        outlined
+                        hint="25 ~ 1000"
+                        persistent-hint
+                    ></v-text-field>
 
-                <div id="bingo" v-resize="onResize">
-                    <v-row
-                        v-for="r in 5"
-                        :key="'row' + r"
-                    >
-                        <v-col
-                            v-for="c in 5"
-                            :key="'col' + (((r - 1) * 5) + c)"
-                            :ref="'sq' + (((r - 1) * 5) + c)"
-                            :style="squareStyle"
-                            class="square"
-                            @click="toggle((((r - 1) * 5) + c))"
-                        >
-                            <template v-if="(((r - 1) * 5) + c) !== 13">
-                                {{ items[(((r - 1) * 5) + c) - 1] }}
-                            </template>
-                            <template v-else>
-                                &#128526;
-                            </template>
+                    <v-row>
+                        <v-col>
+                            <v-btn block rounded color="primary" @click="setMode('one')">
+                                <v-icon class="mr-1">mdi-numeric-1-circle</v-icon>
+                                Bingo(Blank Center)
+                            </v-btn>
+                        </v-col>
+                        <v-col>
+                            <v-btn block rounded color="error" @click="setMode('five')">
+                                <v-icon class="mr-1">mdi-numeric-5-circle</v-icon>
+                                Bingo
+                            </v-btn>
                         </v-col>
                     </v-row>
                 </div>
 
-                <div id="footer">
-                    <a href='https://github.com/pwsunf/vuetify-bingo/' target='_blank'>
-                        <span><v-icon small>mdi-github</v-icon> pwsunf</span>
-                    </a>
-
-                    <span class="date">{{ moment().format('MM/DD HH:mm:ss') }}</span>
+                <!-- bingo -->
+                <div id="bingo" v-else>
+                    <v-row
+                            v-for="r in 5"
+                            :key="'row' + r"
+                    >
+                        <v-col
+                                v-for="c in 5"
+                                :key="'col' + (((r - 1) * 5) + c)"
+                                :ref="'sq' + (((r - 1) * 5) + c)"
+                                :style="squareStyle"
+                                class="square"
+                                @click="toggle((((r - 1) * 5) + c))"
+                        >
+                            <template v-if="oneBingoMode">
+                                <template v-if="(((r - 1) * 5) + c) !== 13">
+                                    {{ items[(((r - 1) * 5) + c) - 1] }}
+                                </template>
+                                <template v-else>
+                                    &#128526;
+                                </template>
+                            </template>
+                            <template v-else>
+                                {{ items[(((r - 1) * 5) + c) - 1] }}
+                            </template>
+                        </v-col>
+                    </v-row>
                 </div>
             </v-container>
         </v-main>
+
+        <v-footer app color="white">
+            <a href='https://github.com/pwsunf/vuetify-bingo/' target='_blank'>
+                <span><v-icon small>mdi-github</v-icon> pwsunf</span>
+            </a>
+
+            <v-spacer></v-spacer>
+
+            <span>{{ dateStr }}</span>
+        </v-footer>
     </v-app>
 </div>
 
@@ -89,12 +129,13 @@
         el: '#app',
         vuetify: new Vuetify(),
         data: () => ({
+            mode: '',
             squareSize: '',
             success: false,
             itemSize: {
                 value: 50,
                 min: 25,
-                max: 100,
+                max: 1000,
                 default: 50
             },
             items: [],
@@ -102,19 +143,20 @@
                 // row
                 ['1', '2', '3', '4', '5'],
                 ['6', '7', '8', '9', '10'],
-                // ['11', '12', '13', '14', '15'],
+                ['11', '12', '13', '14', '15'],
                 ['16', '17', '18', '19', '20'],
                 ['21', '22', '23', '24', '25'],
                 // col
                 ['1', '6', '11', '16', '21'],
                 ['2', '7', '12', '17', '22'],
-                // ['3', '8', '13', '18', '23'],
+                ['3', '8', '13', '18', '23'],
                 ['4', '9', '14', '19', '24'],
                 ['5', '10', '15', '20', '25'],
                 // x
-                // ['1', '7', '13', '19', '25'],
-                // ['5', '9', '13', '17', '21']
-            ]
+                ['1', '7', '13', '19', '25'],
+                ['5', '9', '13', '17', '21']
+            ],
+            dateStr: ''
         }),
         computed: {
             containerStyle () {
@@ -127,6 +169,21 @@
                     width: this.squareSize + 'px',
                     height: this.squareSize + 'px'
                 }
+            },
+            bingoMode () {
+                return this.mode !== ''
+            },
+            bingoModeStr () {
+                if (this.mode === 'one') {
+                    return '1 Bingo (' + this.itemSize.value + ')'
+                } else if (this.mode === 'five') {
+                    return '5 Bingo (' + this.itemSize.value + ')'
+                } else {
+                    return 'Bingo'
+                }
+            },
+            oneBingoMode () {
+                return this.mode === 'one'
             }
         },
         mounted () {
@@ -134,36 +191,19 @@
         },
         methods: {
             initialize () {
-                // this.initializeSound()
-                this.initializeItems()
-            },
-            initializeSound () {
-                const soundClick = new Audio('sound/click.mp3')
-                Object.assign(this, { soundClick })
-
-                const soundWin = new Audio('sound/win.mp3')
-                Object.assign(this, { soundWin })
             },
             initializeItems () {
-                let uri = window.location.search.substring(1)
-                let params = new URLSearchParams(uri)
-
-                let size = params.get('size')
-                if (size) {
-                    if (Number.isNaN(size) || size < this.itemSize.min || this.itemSize.max < size) {
-                        size = this.itemSize.default
-                    }
-                } else {
-                    size = this.itemSize.default
+                if (this.itemSize.value < this.itemSize.min || this.itemSize.max < this.itemSize.value) {
+                    this.itemSize.value = this.itemSize.default
                 }
-
-                this.itemSize.value = size
 
                 this.items = []
                 for (let i=1; i<=this.itemSize.value; i++) {
                     this.items.push(i)
                 }
                 this.shuffle(this.items)
+
+                this.refreshDateStr()
             },
             onResize () {
                 let bingoWidth = window.innerWidth - 24 // 24 padding
@@ -174,20 +214,19 @@
                 this.squareSize = squareSize
             },
             toggle (id) {
-                if (id === 13) {
+                if (id === 13 && this.oneBingoMode) {
                     return
                 }
 
                 // toggle selected
                 this.$refs['sq' + id][0].classList.toggle('selected')
-                // this.soundClick.play();
 
                 // checkArray
-                let success = false
+                let successCnt = 0
                 for (let i=0; i<this.checkArray.length; i++) {
                     let targetArray = this.checkArray[i]
-                    let cnt = 0
 
+                    let cnt = 0
                     targetArray.forEach(e => {
                         if (this.$refs['sq' + e][0].classList.contains('selected')) {
                             cnt++
@@ -195,15 +234,16 @@
                     })
 
                     if (cnt === 5) {
-                        success = true
-                        break
+                        successCnt++
                     }
                 }
 
-                this.success = success
-
-                if (success) {
-                    // this.soundWin.play();
+                if (this.oneBingoMode && successCnt > 0) {
+                    this.success = true
+                } else if (!this.oneBingoMode && successCnt > 4) {
+                    this.success = true
+                } else {
+                    this.success = false
                 }
             },
             shuffle (a) {
@@ -215,6 +255,18 @@
                     a[j] = x
                 }
                 return a;
+            },
+            clearMode () {
+                this.mode = ''
+                this.success = false
+                this.dateStr = ''
+            },
+            setMode (mode) {
+                this.mode = mode
+                this.initializeItems()
+            },
+            refreshDateStr () {
+                this.dateStr = moment().format('MM/DD HH:mm:ss')
             }
         }
     })
